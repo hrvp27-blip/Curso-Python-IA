@@ -1,6 +1,19 @@
 """Módulo 2 - Práctica 2, parte B: calculadora de nómina."""
 
-# TODO: define aquí las constantes SEGURIDAD_SOCIAL y PAGAS
+SEGURIDAD_SOCIAL = 6.35
+PAGAS = 12
+
+# Escala de IRPF: (límite superior del tramo, porcentaje). El último no tiene límite.
+TRAMOS_IRPF = (
+    (12450, 19),
+    (20200, 24),
+    (35200, 30),
+    (60000, 37),
+    (float("inf"), 45),
+)
+
+ANCHO_ETIQUETA = 20
+ANCHO_IMPORTE = 12
 
 
 def calcular_irpf(bruto_anual: float) -> float:
@@ -11,7 +24,15 @@ def calcular_irpf(bruto_anual: float) -> float:
     >>> calcular_irpf(30000)
     7165.5
     """
-    raise NotImplementedError
+    retencion = 0.0
+    limite_inferior = 0
+    for limite_superior, porcentaje in TRAMOS_IRPF:
+        if bruto_anual <= limite_inferior:
+            break
+        importe_gravado = min(bruto_anual, limite_superior) - limite_inferior
+        retencion += importe_gravado * porcentaje / 100
+        limite_inferior = limite_superior
+    return round(retencion, 2)
 
 
 def calcular_seguridad_social(bruto_anual: float) -> float:
@@ -20,7 +41,7 @@ def calcular_seguridad_social(bruto_anual: float) -> float:
     >>> calcular_seguridad_social(30000)
     1905.0
     """
-    raise NotImplementedError
+    return round(bruto_anual * SEGURIDAD_SOCIAL / 100, 2)
 
 
 def calcular_neto_anual(bruto_anual: float) -> float:
@@ -29,7 +50,9 @@ def calcular_neto_anual(bruto_anual: float) -> float:
     >>> calcular_neto_anual(30000)
     20929.5
     """
-    raise NotImplementedError
+    irpf = calcular_irpf(bruto_anual)
+    seguridad_social = calcular_seguridad_social(bruto_anual)
+    return round(bruto_anual - irpf - seguridad_social, 2)
 
 
 def tipo_efectivo(bruto_anual: float) -> float:
@@ -40,7 +63,18 @@ def tipo_efectivo(bruto_anual: float) -> float:
     >>> tipo_efectivo(30000)
     23.89
     """
-    raise NotImplementedError
+    if bruto_anual <= 0:
+        return 0.0
+    return round(calcular_irpf(bruto_anual) / bruto_anual * 100, 2)
+
+
+def linea_nomina(etiqueta: str, importe: float) -> str:
+    """Devuelve una línea del resumen con la etiqueta y el importe alineados.
+
+    >>> linea_nomina("Bruto anual", 30000)
+    'Bruto anual            30,000.00'
+    """
+    return f"{etiqueta:<{ANCHO_ETIQUETA}}{importe:>{ANCHO_IMPORTE},.2f}"
 
 
 def formatear_nomina(bruto_anual: float) -> str:
@@ -53,12 +87,39 @@ def formatear_nomina(bruto_anual: float) -> str:
     Neto anual             20,929.50
     Neto mensual            1,744.12
     """
-    raise NotImplementedError
+    neto_anual = calcular_neto_anual(bruto_anual)
+    etiqueta_irpf = f"IRPF ({tipo_efectivo(bruto_anual):.2f} %)"
+    lineas = [
+        linea_nomina("Bruto anual", bruto_anual),
+        linea_nomina(etiqueta_irpf, -calcular_irpf(bruto_anual)),
+        linea_nomina("Seguridad Social", -calcular_seguridad_social(bruto_anual)),
+        linea_nomina("Neto anual", neto_anual),
+        linea_nomina("Neto mensual", neto_anual / PAGAS),
+    ]
+    return "\n".join(lineas)
+
+
+def a_importe(texto: str) -> float | None:
+    """Convierte ``texto`` en un importe. Devuelve None si no es un número.
+
+    Admite espacios alrededor y un punto decimal; no admite signo.
+
+    >>> a_importe(" 30000.50 "), a_importe("abc"), a_importe("-100")
+    (30000.5, None, None)
+    """
+    limpio = texto.strip()
+    if limpio.replace(".", "", 1).isdigit() and limpio.isascii():
+        return float(limpio)
+    return None
 
 
 def main() -> None:
     """Pide el salario bruto anual y muestra la nómina."""
-    raise NotImplementedError
+    bruto_anual = a_importe(input("Salario bruto anual: "))
+    if bruto_anual is None or bruto_anual <= 0:
+        print("Importe no válido")
+        return
+    print(formatear_nomina(bruto_anual))
 
 
 if __name__ == "__main__":
