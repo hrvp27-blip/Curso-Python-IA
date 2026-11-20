@@ -6,6 +6,10 @@ MINIMO = 1
 MAXIMO = 100
 MAX_INTENTOS = 7
 
+# Respuestas del usuario cuando adivina el ordenador, traducidas a las pistas
+# que usa evaluar_intento.
+RESPUESTAS_USUARIO = {"+": "mayor", "-": "menor", "=": "acierto"}
+
 
 def evaluar_intento(secreto: int, intento: int) -> str:
     """Compara el intento con el número secreto.
@@ -61,5 +65,85 @@ def main() -> None:
     jugar(random.randint(MINIMO, MAXIMO))
 
 
+def proponer(minimo: int, maximo: int) -> int:
+    """Devuelve el punto medio del intervalo: la propuesta de la búsqueda binaria.
+
+    >>> proponer(1, 100), proponer(51, 100)
+    (50, 75)
+    """
+    return (minimo + maximo) // 2
+
+
+def acotar(minimo: int, maximo: int, propuesta: int, pista: str) -> tuple[int, int]:
+    """Reduce el intervalo de búsqueda a la mitad según la pista.
+
+    "mayor" significa que el número buscado es mayor que la propuesta.
+
+    >>> acotar(1, 100, 50, "mayor"), acotar(1, 100, 50, "menor")
+    ((51, 100), (1, 49))
+    """
+    if pista == "mayor":
+        return propuesta + 1, maximo
+    return minimo, propuesta - 1
+
+
+def adivina_el_ordenador(max_intentos: int = MAX_INTENTOS) -> bool:
+    """El ordenador adivina un número que piensa el usuario con búsqueda binaria.
+
+    Devuelve True si lo adivina. Una respuesta no válida no consume intento.
+    """
+    print(f"Piensa un número entre {MINIMO} y {MAXIMO} y yo intentaré adivinarlo.")
+    print("Responde + si tu número es mayor, - si es menor o = si he acertado.")
+    minimo, maximo = MINIMO, MAXIMO
+    intento_actual = 1
+    while intento_actual <= max_intentos:
+        if minimo > maximo:
+            print("Tus respuestas se contradicen: ningún número las cumple.")
+            return False
+
+        propuesta = proponer(minimo, maximo)
+        respuesta = input(f"Intento {intento_actual} de {max_intentos}. ¿Es {propuesta}? ")
+        pista = RESPUESTAS_USUARIO.get(respuesta.strip())
+        if pista is None:
+            print("Responde +, - o =.")
+            continue
+
+        if pista == "acierto":
+            print(f"¡Lo he adivinado en {intento_actual} intentos!")
+            return True
+        minimo, maximo = acotar(minimo, maximo, propuesta, pista)
+        intento_actual += 1
+
+    print("No lo he adivinado. ¿Seguro que tus respuestas eran correctas?")
+    return False
+
+
+def quiere_jugar_otra_vez() -> bool:
+    """Pregunta si se quiere jugar otra partida."""
+    respuesta = input("¿Quieres jugar otra vez? (s/n): ")
+    return respuesta.strip().lower() in ("s", "si", "sí")
+
+
+def programa() -> None:
+    """Elige quién adivina y permite jugar varias partidas seguidas."""
+    while True:
+        print("¿Quién adivina?")
+        print("1. Tú adivinas el número del ordenador")
+        print("2. El ordenador adivina tu número")
+        modo = input("Elige 1 o 2: ").strip()
+        if modo == "1":
+            main()
+        elif modo == "2":
+            adivina_el_ordenador()
+        else:
+            print("Opción no válida.")
+            continue
+
+        if not quiere_jugar_otra_vez():
+            print("¡Hasta la próxima!")
+            return
+        print()
+
+
 if __name__ == "__main__":
-    main()
+    programa()

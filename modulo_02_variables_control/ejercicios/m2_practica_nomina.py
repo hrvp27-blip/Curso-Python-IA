@@ -2,6 +2,7 @@
 
 SEGURIDAD_SOCIAL = 6.35
 PAGAS = 12
+PAGAS_ADMITIDAS = (12, 14)
 
 # Escala de IRPF: (límite superior del tramo, porcentaje). El último no tiene límite.
 TRAMOS_IRPF = (
@@ -77,8 +78,11 @@ def linea_nomina(etiqueta: str, importe: float) -> str:
     return f"{etiqueta:<{ANCHO_ETIQUETA}}{importe:>{ANCHO_IMPORTE},.2f}"
 
 
-def formatear_nomina(bruto_anual: float) -> str:
+def formatear_nomina(bruto_anual: float, pagas: int = PAGAS) -> str:
     """Devuelve el resumen de la nómina en cinco líneas alineadas.
+
+    Con un número de pagas distinto de PAGAS, la última línea muestra el neto
+    de cada paga.
 
     >>> print(formatear_nomina(30000))
     Bruto anual            30,000.00
@@ -86,15 +90,18 @@ def formatear_nomina(bruto_anual: float) -> str:
     Seguridad Social       -1,905.00
     Neto anual             20,929.50
     Neto mensual            1,744.12
+    >>> print(formatear_nomina(30000, pagas=14).splitlines()[-1])
+    Neto por paga (14)      1,494.96
     """
     neto_anual = calcular_neto_anual(bruto_anual)
     etiqueta_irpf = f"IRPF ({tipo_efectivo(bruto_anual):.2f} %)"
+    etiqueta_neto = "Neto mensual" if pagas == PAGAS else f"Neto por paga ({pagas})"
     lineas = [
         linea_nomina("Bruto anual", bruto_anual),
         linea_nomina(etiqueta_irpf, -calcular_irpf(bruto_anual)),
         linea_nomina("Seguridad Social", -calcular_seguridad_social(bruto_anual)),
         linea_nomina("Neto anual", neto_anual),
-        linea_nomina("Neto mensual", neto_anual / PAGAS),
+        linea_nomina(etiqueta_neto, neto_anual / pagas),
     ]
     return "\n".join(lineas)
 
@@ -113,14 +120,40 @@ def a_importe(texto: str) -> float | None:
     return None
 
 
-def main() -> None:
-    """Pide el salario bruto anual y muestra la nómina."""
+def a_pagas(texto: str) -> int | None:
+    """Convierte la respuesta en número de pagas. Si está vacía, vale PAGAS.
+
+    Devuelve None si no es uno de los valores de PAGAS_ADMITIDAS.
+
+    >>> a_pagas(""), a_pagas(" 14 "), a_pagas("13"), a_pagas("doce")
+    (12, 14, None, None)
+    """
+    limpio = texto.strip()
+    if not limpio:
+        return PAGAS
+    if limpio.isdigit() and int(limpio) in PAGAS_ADMITIDAS:
+        return int(limpio)
+    return None
+
+
+def main(preguntar_pagas: bool = False) -> None:
+    """Pide el salario bruto anual y muestra la nómina.
+
+    Con ``preguntar_pagas=True`` pide también el número de pagas (12 o 14).
+    """
     bruto_anual = a_importe(input("Salario bruto anual: "))
     if bruto_anual is None or bruto_anual <= 0:
         print("Importe no válido")
         return
-    print(formatear_nomina(bruto_anual))
+
+    pagas = PAGAS
+    if preguntar_pagas:
+        pagas = a_pagas(input(f"Número de pagas {PAGAS_ADMITIDAS} [{PAGAS}]: "))
+        if pagas is None:
+            print("Número de pagas no válido")
+            return
+    print(formatear_nomina(bruto_anual, pagas))
 
 
 if __name__ == "__main__":
-    main()
+    main(preguntar_pagas=True)
