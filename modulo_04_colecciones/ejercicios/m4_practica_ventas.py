@@ -16,12 +16,12 @@ def importe(venta: dict) -> float:
     >>> importe({"unidades": 3, "precio": 19.9})
     59.7
     """
-    raise NotImplementedError
+    return round(venta["unidades"] * venta["precio"], 2)
 
 
 def total_ventas(ventas: list[dict]) -> float:
     """Devuelve la suma de los importes de todas las ventas, con dos decimales."""
-    raise NotImplementedError
+    return round(sum(importe(venta) for venta in ventas), 2)
 
 
 def filtrar_ventas(ventas: list[dict], *, region: str | None = None,
@@ -32,9 +32,14 @@ def filtrar_ventas(ventas: list[dict], *, region: str | None = None,
     Un criterio que vale ``None`` no se aplica. ``desde`` y ``hasta`` son
     fechas ISO y las dos están incluidas en el intervalo.
     """
-    raise NotImplementedError
     # Las fechas ISO se pueden comparar como texto: su orden alfabético
     # coincide con el cronológico.
+    return [venta for venta in ventas
+            if (region is None or venta["region"] == region)
+            and (categoria is None or venta["categoria"] == categoria)
+            and (vendedor is None or venta["vendedor"] == vendedor)
+            and (desde is None or venta["fecha"] >= desde)
+            and (hasta is None or venta["fecha"] <= hasta)]
 
 
 def importe_por(ventas: list[dict], campo: str) -> dict[str, float]:
@@ -45,12 +50,22 @@ def importe_por(ventas: list[dict], campo: str) -> dict[str, float]:
     >>> importe_por([{"region": "Norte", "unidades": 2, "precio": 10.0}], "region")
     {'Norte': 20.0}
     """
-    raise NotImplementedError
+    totales = _sumar_por(ventas, campo, importe)
+    return {clave: round(total, 2) for clave, total in totales.items()}
 
 
 def unidades_por_producto(ventas: list[dict]) -> dict[str, int]:
     """Devuelve las unidades totales vendidas de cada producto."""
-    raise NotImplementedError
+    return _sumar_por(ventas, "producto", lambda venta: venta["unidades"])
+
+
+def _sumar_por(ventas: list[dict], campo: str, valor) -> dict:
+    """Agrupa las ventas por ``campo`` y suma ``valor(venta)`` en cada grupo."""
+    totales = {}
+    for venta in ventas:
+        clave = venta[campo]
+        totales[clave] = totales.get(clave, 0) + valor(venta)
+    return totales
 
 
 def ranking(ventas: list[dict], campo: str, cantidad: int = 3) -> list[tuple[str, float]]:
@@ -58,7 +73,7 @@ def ranking(ventas: list[dict], campo: str, cantidad: int = 3) -> list[tuple[str
 
     De mayor a menor importe. A igual importe, por orden alfabético de la clave.
     """
-    raise NotImplementedError
+    return sorted(importe_por(ventas, campo).items(), key=lambda par: (-par[1], par[0]))[:cantidad]
 
 
 def producto_mas_vendido(ventas: list[dict]) -> str | None:
@@ -66,17 +81,48 @@ def producto_mas_vendido(ventas: list[dict]) -> str | None:
 
     En caso de empate, el primero por orden alfabético.
     """
-    raise NotImplementedError
+    unidades = unidades_por_producto(ventas)
+    # min con (-unidades, nombre): más unidades primero y, a igualdad, orden alfabético
+    return min(unidades, key=lambda producto: (-unidades[producto], producto), default=None)
 
 
 def ticket_medio(ventas: list[dict]) -> float:
     """Devuelve el importe medio por venta, con dos decimales. Sin ventas, 0.0."""
-    raise NotImplementedError
+    if not ventas:
+        return 0.0
+    return round(total_ventas(ventas) / len(ventas), 2)
+
+
+def _linea_resumen(etiqueta: str, valor) -> str:
+    """Línea del resumen: etiqueta a la izquierda en 30 y valor a la derecha en 14."""
+    return f"{etiqueta:<30}{valor:>14}"
+
+
+def _desglose(ventas: list[dict], campo: str, titulo: str) -> list[str]:
+    """Título y una línea por grupo, de mayor a menor importe."""
+    grupos = ranking(ventas, campo, len(ventas))
+    return [titulo] + [f"  {clave:<28}{total:>14,.2f}" for clave, total in grupos]
 
 
 def generar_informe(ventas: list[dict]) -> str:
     """Devuelve el informe de ventas como texto, con el formato del enunciado."""
-    raise NotImplementedError
+    doble = "=" * ANCHO
+    simple = "-" * ANCHO
+    lineas = [
+        doble,
+        "INFORME DE VENTAS".center(ANCHO).rstrip(),
+        doble,
+        _linea_resumen("Ventas registradas", len(ventas)),
+        _linea_resumen("Importe total", f"{total_ventas(ventas):,.2f}"),
+        _linea_resumen("Ticket medio", f"{ticket_medio(ventas):,.2f}"),
+        _linea_resumen("Producto más vendido", producto_mas_vendido(ventas) or "-"),
+    ]
+    for campo, titulo in [("region", "Por región"), ("categoria", "Por categoría"),
+                          ("vendedor", "Por vendedor")]:
+        lineas.append(simple)
+        lineas.extend(_desglose(ventas, campo, titulo))
+    lineas.append(doble)
+    return "\n".join(lineas)
 
 
 def main():
