@@ -11,6 +11,9 @@ Todas las funciones trabajan con una lista de diccionarios como esta:
 Ninguna función modifica la lista que recibe.
 """
 
+from collections import defaultdict
+from operator import itemgetter
+
 
 def buscar_por_id(registros: list[dict], identificador: int) -> dict | None:
     """Devuelve el registro cuyo campo "id" coincide, o ``None`` si no existe."""
@@ -35,6 +38,20 @@ def ordenar_por(registros: list[dict], campo: str, descendente: bool = False) ->
     return sorted(registros, key=lambda registro: registro[campo], reverse=descendente)
 
 
+def ordenar_por_varios(registros: list[dict], campos: list[str],
+                       descendente: bool = False) -> list[dict]:
+    """Devuelve una lista nueva ordenada por varios campos, en el orden indicado.
+
+    El segundo campo solo decide cuando hay empate en el primero, y así
+    sucesivamente.
+
+    >>> datos = [{"d": "IT", "n": "Linus"}, {"d": "HR", "n": "Ada"}, {"d": "IT", "n": "Ada"}]
+    >>> [(r["d"], r["n"]) for r in ordenar_por_varios(datos, ["d", "n"])]
+    [('HR', 'Ada'), ('IT', 'Ada'), ('IT', 'Linus')]
+    """
+    return sorted(registros, key=itemgetter(*campos), reverse=descendente)
+
+
 def mejor_pagados(registros: list[dict], cantidad: int = 3) -> list[str]:
     """Devuelve los nombres de los ``cantidad`` empleados con mayor salario.
 
@@ -50,10 +67,10 @@ def agrupar_por(registros: list[dict], campo: str) -> dict[str, list[dict]]:
     Devuelve un diccionario que asocia cada valor distinto del campo con la
     lista de registros que lo tienen, en su orden original.
     """
-    grupos = {}
+    grupos = defaultdict(list)
     for registro in registros:
-        grupos.setdefault(registro[campo], []).append(registro)
-    return grupos
+        grupos[registro[campo]].append(registro)
+    return dict(grupos)
 
 
 def salario_medio_por_departamento(registros: list[dict]) -> dict[str, float]:

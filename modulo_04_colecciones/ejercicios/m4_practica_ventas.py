@@ -5,9 +5,12 @@ Cada venta es un diccionario con las claves "fecha", "vendedor", "region",
 lista de ventas que recibe.
 """
 
+from datetime import date
+
 from m4_datos_ventas import VENTAS
 
 ANCHO = 44
+MEDIDAS = ("importe", "unidades")
 
 
 def importe(venta: dict) -> float:
@@ -54,9 +57,18 @@ def importe_por(ventas: list[dict], campo: str) -> dict[str, float]:
     return {clave: round(total, 2) for clave, total in totales.items()}
 
 
+def unidades_por(ventas: list[dict], campo: str) -> dict[str, int]:
+    """Agrupa las ventas por ``campo`` y devuelve las unidades totales de cada grupo.
+
+    >>> unidades_por([{"region": "Norte", "unidades": 2}, {"region": "Norte", "unidades": 3}], "region")
+    {'Norte': 5}
+    """
+    return _sumar_por(ventas, campo, lambda venta: venta["unidades"])
+
+
 def unidades_por_producto(ventas: list[dict]) -> dict[str, int]:
     """Devuelve las unidades totales vendidas de cada producto."""
-    return _sumar_por(ventas, "producto", lambda venta: venta["unidades"])
+    return unidades_por(ventas, "producto")
 
 
 def _sumar_por(ventas: list[dict], campo: str, valor) -> dict:
@@ -68,12 +80,24 @@ def _sumar_por(ventas: list[dict], campo: str, valor) -> dict:
     return totales
 
 
-def ranking(ventas: list[dict], campo: str, cantidad: int = 3) -> list[tuple[str, float]]:
+def ranking(ventas: list[dict], campo: str, cantidad: int = 3, *,
+            medida: str = "importe") -> list[tuple[str, float]]:
     """Devuelve los ``cantidad`` grupos con mayor importe, como tuplas (clave, importe).
 
     De mayor a menor importe. A igual importe, por orden alfabético de la clave.
+    Con ``medida="unidades"`` ordena por unidades vendidas en lugar de por importe.
+
+    >>> ventas = [{"region": "Norte", "unidades": 1, "precio": 100.0},
+    ...           {"region": "Sur", "unidades": 5, "precio": 10.0}]
+    >>> ranking(ventas, "region")
+    [('Norte', 100.0), ('Sur', 50.0)]
+    >>> ranking(ventas, "region", medida="unidades")
+    [('Sur', 5), ('Norte', 1)]
     """
-    return sorted(importe_por(ventas, campo).items(), key=lambda par: (-par[1], par[0]))[:cantidad]
+    if medida not in MEDIDAS:
+        raise ValueError(f"medida debe ser una de {MEDIDAS}, no {medida!r}")
+    totales = importe_por(ventas, campo) if medida == "importe" else unidades_por(ventas, campo)
+    return sorted(totales.items(), key=lambda par: (-par[1], par[0]))[:cantidad]
 
 
 def producto_mas_vendido(ventas: list[dict]) -> str | None:
@@ -93,19 +117,74 @@ def ticket_medio(ventas: list[dict]) -> float:
     return round(total_ventas(ventas) / len(ventas), 2)
 
 
+def semana(venta: dict) -> str:
+    """Devuelve la semana ISO de la venta con el formato ``AAAA-Snn``.
+
+    >>> semana({"fecha": "2026-10-01"})
+    '2026-S40'
+    """
+    anio, numero, _ = date.fromisoformat(venta["fecha"]).isocalendar()
+    return f"{anio}-S{numero:02d}"
+
+
+def importe_por_semana(ventas: list[dict]) -> dict[str, float]:
+    """Devuelve el importe total de cada semana ISO, en orden cronológico."""
+    # Copia de cada venta con el campo "semana" añadido: no se tocan los originales
+    con_semana = [{**venta, "semana": semana(venta)} for venta in ventas]
+    return dict(sorted(importe_por(con_semana, "semana").items()))
+
+
+def comparar_periodos(ventas: list[dict], corte: str) -> float | None:
+    """Devuelve la variación en porcentaje del importe entre dos periodos.
+
+    El primer periodo son las ventas anteriores a ``corte`` y el segundo, las
+    de ``corte`` en adelante. Redondea a dos decimales. Si el primer periodo
+    no tiene importe devuelve ``None``, porque no se puede dividir entre cero.
+
+    >>> ventas = [{"fecha": "2026-10-01", "unidades": 1, "precio": 100.0},
+    ...           {"fecha": "2026-10-20", "unidades": 1, "precio": 150.0}]
+    >>> comparar_periodos(ventas, "2026-10-16")
+    50.0
+    """
+    anterior = total_ventas([venta for venta in ventas if venta["fecha"] < corte])
+    posterior = total_ventas(filtrar_ventas(ventas, desde=corte))
+    if not anterior:
+        return None
+    return round((posterior - anterior) / anterior * 100, 2)
+
+
+def mejor_vendedor_por_region(ventas: list[dict]) -> dict[str, str]:
+    """Devuelve el vendedor con mayor importe de cada región.
+
+    A igual importe, el primero por orden alfabético, igual que en ``ranking``.
+    """
+    return {
+        region: ranking(filtrar_ventas(ventas, region=region), "vendedor", 1)[0][0]
+        for region in importe_por(ventas, "region")
+    }
+
+
 def _linea_resumen(etiqueta: str, valor) -> str:
     """Línea del resumen: etiqueta a la izquierda en 30 y valor a la derecha en 14."""
     return f"{etiqueta:<30}{valor:>14}"
 
 
-def _desglose(ventas: list[dict], campo: str, titulo: str) -> list[str]:
-    """Título y una línea por grupo, de mayor a menor importe."""
-    grupos = ranking(ventas, campo, len(ventas))
+def _lineas_grupos(titulo: str, grupos) -> list[str]:
+    """Título y una línea por cada par (clave, importe)."""
     return [titulo] + [f"  {clave:<28}{total:>14,.2f}" for clave, total in grupos]
 
 
-def generar_informe(ventas: list[dict]) -> str:
-    """Devuelve el informe de ventas como texto, con el formato del enunciado."""
+def _desglose(ventas: list[dict], campo: str, titulo: str) -> list[str]:
+    """Título y una línea por grupo, de mayor a menor importe."""
+    return _lineas_grupos(titulo, ranking(ventas, campo, len(ventas)))
+
+
+def generar_informe(ventas: list[dict], *, por_semana: bool = False) -> str:
+    """Devuelve el informe de ventas como texto, con el formato del enunciado.
+
+    Con ``por_semana=True`` añade al final un desglose «Por semana», en orden
+    cronológico.
+    """
     doble = "=" * ANCHO
     simple = "-" * ANCHO
     lineas = [
@@ -121,6 +200,9 @@ def generar_informe(ventas: list[dict]) -> str:
                           ("vendedor", "Por vendedor")]:
         lineas.append(simple)
         lineas.extend(_desglose(ventas, campo, titulo))
+    if por_semana:
+        lineas.append(simple)
+        lineas.extend(_lineas_grupos("Por semana", importe_por_semana(ventas).items()))
     lineas.append(doble)
     return "\n".join(lineas)
 

@@ -3,6 +3,8 @@
 Parte de los ejercicios de estudiantes y carrito del curso anterior.
 """
 
+from collections import Counter
+
 
 def punto_medio(a: tuple[float, float], b: tuple[float, float]) -> tuple[float, float]:
     """Devuelve el punto medio entre dos puntos (x, y).
@@ -19,11 +21,8 @@ def contar_palabras(texto: str) -> dict[str, int]:
     >>> contar_palabras("El gato y el perro")
     {'el': 2, 'gato': 1, 'y': 1, 'perro': 1}
     """
-    cuenta = {}
-    for palabra in texto.lower().split():
-        cuenta[palabra] = cuenta.get(palabra, 0) + 1
-    return cuenta
-    # Con la librería estándar: dict(Counter(texto.lower().split()))
+    # Counter conserva el orden de aparición, igual que el patrón get(p, 0) + 1
+    return dict(Counter(texto.lower().split()))
 
 
 def invertir(diccionario: dict) -> dict:
