@@ -55,6 +55,19 @@ class Dinero:
         """Devuelve un Dinero NUEVO con la suma, en la moneda del primero."""
         return Dinero(self.cantidad + otro.cantidad, self.moneda)
 
+    def __hash__(self) -> int:
+        """Ampliación 1: permite usar Dinero como clave de diccionario o en un set.
+
+        Tiene que ser coherente con ``__eq__``: dos objetos iguales dan el mismo
+        hash. Solo tiene sentido si el objeto no cambia: si se modificara la
+        cantidad de una clave ya guardada, su hash cambiaría y el diccionario
+        no volvería a encontrarla.
+
+        >>> {Dinero(5): "cinco"}[Dinero(5)]
+        'cinco'
+        """
+        return hash((self.cantidad, self.moneda))
+
 
 class Playlist:
     """Una lista de canciones que se comporta como una colección integrada.

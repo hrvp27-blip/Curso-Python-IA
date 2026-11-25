@@ -1,12 +1,17 @@
 """Módulo 5 - Ejercicio 1: clases, objetos y constructores."""
 
+from dataclasses import dataclass
+
+
+# Ampliación 3: Rectangulo como dataclass. Desaparece el __init__ que solo
+# copiaba los parámetros a los atributos, y a cambio se obtienen gratis
+# __repr__ (Rectangulo(base=3, altura=4)) y __eq__ (compara base y altura).
+@dataclass
 class Rectangulo:
     """Un rectángulo definido por su base y su altura."""
 
-    def __init__(self, base: float, altura: float):
-        """Guarda la base y la altura en los atributos ``base`` y ``altura``."""
-        self.base = base
-        self.altura = altura
+    base: float
+    altura: float
 
     def area(self) -> float:
         """Devuelve el área.

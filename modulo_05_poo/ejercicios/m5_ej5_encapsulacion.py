@@ -16,6 +16,25 @@ class CuentaBancaria:
         self._saldo = saldo_inicial
         self._movimientos = []
 
+    @classmethod
+    def desde_movimientos(cls, titular: str, movimientos: list[float]) -> "CuentaBancaria":
+        """Ampliación 4: crea una cuenta vacía y le aplica los importes en orden.
+
+        Los positivos son ingresos y los negativos retiradas. Cada movimiento
+        pasa por ``ingresar`` o ``retirar``, así que se valida igual que si se
+        hiciera a mano: una retirada sin saldo suficiente lanza ``ValueError``.
+
+        >>> CuentaBancaria.desde_movimientos("Ada", [100, -30, 50]).saldo
+        120.0
+        """
+        cuenta = cls(titular)
+        for importe in movimientos:
+            if importe >= 0:
+                cuenta.ingresar(importe)
+            else:
+                cuenta.retirar(-importe)
+        return cuenta
+
     @property
     def saldo(self) -> float:
         """Saldo actual. Es de solo lectura."""

@@ -4,6 +4,22 @@ Las tres clases de exportación no comparten clase base: lo único que tienen
 en común es el método ``exportar``.
 """
 
+from typing import Protocol
+
+
+class Exportador(Protocol):
+    """Ampliación 2: describe lo que tiene que tener un exportador.
+
+    Ninguna clase hereda de él. Sirve para anotar las funciones: cualquier
+    objeto con un atributo ``extension`` y un método ``exportar`` cumple el
+    protocolo, que es justo el duck typing del ejercicio escrito como tipo.
+    """
+
+    extension: str
+
+    def exportar(self, registros: list[dict]) -> str: ...
+
+
 class ExportadorCsv:
     """Exporta registros como texto CSV separado por punto y coma."""
 
@@ -72,7 +88,7 @@ class ExportadorMarkdown:
         return "\n".join(lineas)
 
 
-def exportar_con(exportador, registros: list[dict]) -> str:
+def exportar_con(exportador: Exportador, registros: list[dict]) -> str:
     """Exporta los registros con el exportador recibido.
 
     No puede comprobar de qué clase es el exportador: tiene que funcionar
@@ -81,7 +97,7 @@ def exportar_con(exportador, registros: list[dict]) -> str:
     return exportador.exportar(registros)
 
 
-def nombre_de_fichero(exportador, nombre: str) -> str:
+def nombre_de_fichero(exportador: Exportador, nombre: str) -> str:
     """Devuelve "nombre.extension" usando el atributo ``extension`` del exportador.
 
     >>> nombre_de_fichero(ExportadorCsv(), "ventas")
@@ -90,12 +106,12 @@ def nombre_de_fichero(exportador, nombre: str) -> str:
     return f"{nombre}.{exportador.extension}"
 
 
-def exportar_a_todos(exportadores: list, registros: list[dict]) -> dict[str, str]:
+def exportar_a_todos(exportadores: list[Exportador], registros: list[dict]) -> dict[str, str]:
     """Devuelve un diccionario que asocia cada extensión con su texto exportado."""
     return {exportador.extension: exportador.exportar(registros) for exportador in exportadores}
 
 
-def puede_exportar(objeto) -> bool:
+def puede_exportar(objeto: object) -> bool:
     """Indica si el objeto tiene un método ``exportar`` que se pueda llamar.
 
     >>> puede_exportar(ExportadorCsv()), puede_exportar("texto")
