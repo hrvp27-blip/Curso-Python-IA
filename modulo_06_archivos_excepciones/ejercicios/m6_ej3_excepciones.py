@@ -1,5 +1,9 @@
 """Módulo 6 - Ejercicio 3: excepciones."""
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 def a_entero(texto, por_defecto=None):
     """Convierte a entero con ``int()``. Si no se puede, devuelve ``por_defecto``.
@@ -102,6 +106,7 @@ def convertir_todos(textos: list[str]) -> tuple[list[float], list[str]]:
             numeros.append(float(texto))
         except ValueError:
             rechazados.append(texto)
+            logger.warning("Texto rechazado, no es un número: %r", texto)
     return numeros, rechazados
 
 
@@ -146,3 +151,31 @@ def puerto_configurado(configuracion: dict) -> int:
         raise ErrorDeConfiguracion("Falta el puerto en la configuración") from error
     except ValueError as error:
         raise ErrorDeConfiguracion(f"Puerto no válido: {configuracion['puerto']}") from error
+
+
+def main(argumentos: list[str] | None = None) -> int:
+    """Ampliación 1: convierte los textos de la línea de órdenes con ``convertir_todos``.
+
+    El nivel del registro se elige con ``--nivel`` (por defecto WARNING, que
+    muestra un aviso por cada texto rechazado; con ERROR no se ven).
+
+    Uso: python m6_ej3_excepciones.py [--nivel NIVEL] texto [texto ...]
+    """
+    import argparse
+
+    analizador = argparse.ArgumentParser(description="Convierte textos a números.")
+    analizador.add_argument("textos", nargs="*")
+    analizador.add_argument(
+        "--nivel", default="WARNING", choices=["DEBUG", "INFO", "WARNING", "ERROR"]
+    )
+    opciones = analizador.parse_args(argumentos)
+
+    logging.basicConfig(level=opciones.nivel, format="%(levelname)s %(message)s")
+    numeros, rechazados = convertir_todos(opciones.textos)
+    print(f"Números: {numeros}")
+    print(f"Rechazados: {rechazados}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

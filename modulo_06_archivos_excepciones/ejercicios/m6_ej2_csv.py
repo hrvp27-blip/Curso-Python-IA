@@ -4,6 +4,8 @@ Todos los ficheros se abren con ``encoding="utf-8"`` y ``newline=""``.
 """
 
 import csv
+import json
+from pathlib import Path
 
 
 def leer_csv(ruta, delimitador: str = ",") -> list[dict]:
@@ -70,3 +72,40 @@ def convertir_delimitador(origen, destino, de: str = ";", a: str = ",") -> None:
         open(destino, "w", encoding="utf-8", newline="") as salida,
     ):
         csv.writer(salida, delimiter=a).writerows(csv.reader(entrada, delimiter=de))
+
+
+# ------------------------------------------------------- Ampliación 2: JSON
+def guardar_json(ruta, datos) -> None:
+    """Guarda ``datos`` en un fichero JSON legible, con sangría y sin escapar la ñ.
+
+    Si la carpeta no existe, se crea.
+    """
+    ruta = Path(ruta)
+    ruta.parent.mkdir(parents=True, exist_ok=True)
+    with open(ruta, "w", encoding="utf-8") as fichero:
+        json.dump(datos, fichero, ensure_ascii=False, indent=2)
+        fichero.write("\n")
+
+
+def cargar_json(ruta):
+    """Devuelve los datos guardados en un fichero JSON."""
+    with open(ruta, encoding="utf-8") as fichero:
+        return json.load(fichero)
+
+
+def csv_a_json(origen, destino) -> int:
+    """Convierte un CSV de ventas en JSON, con unidades y precio como números.
+
+    Devuelve el número de ventas convertidas.
+
+    Uso: python m6_ej2_csv.py   (convierte datos/ventas.csv en datos/ventas.json)
+    """
+    ventas = leer_ventas(origen)
+    guardar_json(destino, ventas)
+    return len(ventas)
+
+
+if __name__ == "__main__":
+    DATOS = Path(__file__).parent.parent / "datos"
+    convertidas = csv_a_json(DATOS / "ventas.csv", DATOS / "ventas.json")
+    print(f"{convertidas} ventas guardadas en {DATOS / 'ventas.json'}")

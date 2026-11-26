@@ -2,12 +2,29 @@
 
 Lee un CSV de ventas, valida cada fila, registra las que no valen y exporta
 un resumen por región.
+
+Ampliaciones:
+
+1. Acepta el delimitador punto y coma y la coma decimal (``29,5``).
+2. Descarta las filas repetidas con el motivo "fila repetida".
+3. ``main()`` admite ``--log fichero`` para enviar el registro a un fichero.
+4. Después de importar, genera el informe de la Práctica 4 en ``informe.txt``.
 """
 
 import csv
 import logging
+import sys
 from datetime import date
 from pathlib import Path
+
+# Ampliación 4: la Práctica 4 está en otra carpeta del curso. Se añade al
+# final de sys.path para poder ejecutar este fichero directamente; con
+# pytest ya está en el path gracias a conftest.py.
+CARPETA_PRACTICA_4 = Path(__file__).resolve().parents[2] / "modulo_04_colecciones" / "ejercicios"
+if str(CARPETA_PRACTICA_4) not in sys.path:
+    sys.path.append(str(CARPETA_PRACTICA_4))
+
+from m4_practica_ventas import generar_informe  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +44,7 @@ class FilaNoValida(ErrorDeImportacion):
     """Una fila tiene un dato incorrecto. Se anota y se sigue con la siguiente."""
 
 
-def validar_fila(fila: dict) -> dict:
+def validar_fila(fila: dict, coma_decimal: bool = False) -> dict:
     """Devuelve la venta de una fila con los tipos convertidos.
 
     Recibe un diccionario de cadenas y devuelve uno NUEVO con los mismos
@@ -39,6 +56,11 @@ def validar_fila(fila: dict) -> dict:
     - "fecha no válida: <valor>" si la fecha no es una fecha ISO
     - "unidades no válidas: <valor>" si no es un entero mayor que cero
     - "precio no válido: <valor>" si no es un número mayor que cero
+
+    Ampliación 1: con ``coma_decimal=True`` el precio puede llevar coma
+    decimal (``29,5``). Solo se cambia la coma por un punto: un precio con
+    separador de miles como ``1.234,5`` sigue siendo no válido, para no
+    adivinar qué quería decir quien lo tecleó.
     """
     venta = {}
     for campo in CAMPOS:
@@ -53,8 +75,14 @@ def validar_fila(fila: dict) -> dict:
         raise FilaNoValida(f"fecha no válida: {venta['fecha']}") from None
 
     venta["unidades"] = _positivo(int, venta["unidades"], "unidades no válidas")
-    venta["precio"] = _positivo(float, venta["precio"], "precio no válido")
+    a_precio = _float_con_coma if coma_decimal else float
+    venta["precio"] = _positivo(a_precio, venta["precio"], "precio no válido")
     return venta
+
+
+def _float_con_coma(texto: str) -> float:
+    """Convierte a float aceptando la coma como separador decimal."""
+    return float(texto.replace(",", "."))
 
 
 def _positivo(convertir, texto: str, motivo: str):
@@ -71,7 +99,9 @@ def _positivo(convertir, texto: str, motivo: str):
     return numero
 
 
-def importar_ventas(ruta) -> tuple[list[dict], list[str]]:
+def importar_ventas(
+    ruta, delimitador: str | None = None, coma_decimal: bool | None = None
+) -> tuple[list[dict], list[str]]:
     """Lee el CSV y devuelve una tupla (ventas válidas, errores).
 
     Cada error es un texto "Línea N: motivo", donde N es el número de línea
@@ -85,6 +115,13 @@ def importar_ventas(ruta) -> tuple[list[dict], list[str]]:
       ``FileNotFoundError`` original
     - "Faltan columnas: <nombres separados por coma y espacio>" si a la
       cabecera le falta alguna de ``CAMPOS``, en el orden de ``CAMPOS``
+
+    Ampliación 1: si no se indica ``delimitador``, se deduce de la cabecera
+    (coma o punto y coma). Si no se indica ``coma_decimal``, se activa con el
+    punto y coma, que es como exporta Excel en español.
+
+    Ampliación 2: una fila igual a otra ya importada (con los datos ya
+    limpios y convertidos) se descarta con el motivo "fila repetida".
     """
     # Este try solo protege la apertura: es el error no recuperable
     try:
@@ -93,17 +130,38 @@ def importar_ventas(ruta) -> tuple[list[dict], list[str]]:
         raise FicheroNoValido(f"No existe el fichero {ruta}") from error
 
     ventas, errores = [], []
+    vistas = set()
     with fichero:
-        lector = csv.DictReader(fichero)
+        if delimitador is None:
+            delimitador = _detectar_delimitador(fichero)
+        if coma_decimal is None:
+            coma_decimal = delimitador == ";"
+        lector = csv.DictReader(fichero, delimiter=delimitador)
         _comprobar_columnas(lector.fieldnames or [])
         for fila in lector:
             # Este try protege una sola fila: el error es recuperable
             try:
-                ventas.append(validar_fila(fila))
+                venta = validar_fila(fila, coma_decimal)
+                clave = tuple(venta.values())
+                if clave in vistas:
+                    raise FilaNoValida("fila repetida")
             except FilaNoValida as error:
                 errores.append(f"Línea {lector.line_num}: {error}")
                 logger.warning("Línea %d descartada: %s", lector.line_num, error)
+            else:
+                vistas.add(clave)
+                ventas.append(venta)
     return ventas, errores
+
+
+def _detectar_delimitador(fichero) -> str:
+    """Mira la cabecera y devuelve ";" si tiene más puntos y comas que comas.
+
+    Deja el fichero otra vez al principio para que lo lea ``csv.DictReader``.
+    """
+    cabecera = fichero.readline()
+    fichero.seek(0)
+    return ";" if cabecera.count(";") > cabecera.count(",") else ","
 
 
 def _comprobar_columnas(cabecera: list[str]) -> None:
@@ -148,6 +206,12 @@ def escribir_errores(ruta, errores: list[str]) -> None:
             fichero.write(error + "\n")
 
 
+def escribir_informe(ruta, ventas: list[dict]) -> None:
+    """Ampliación 4: escribe el informe de la Práctica 4 en un fichero de texto."""
+    with open(ruta, "w", encoding="utf-8") as fichero:
+        fichero.write(generar_informe(ventas) + "\n")
+
+
 def procesar(entrada, carpeta_salida) -> dict:
     """Importa el fichero y deja los resultados en la carpeta de salida.
 
@@ -158,12 +222,17 @@ def procesar(entrada, carpeta_salida) -> dict:
 
     Si el fichero de entrada no vale, ``FicheroNoValido`` sube sin capturar
     y no se escribe nada.
+
+    Ampliación 4: escribe además ``informe.txt`` con el informe de la
+    Práctica 4, generado con ``generar_informe`` a partir de las ventas
+    válidas.
     """
     ventas, errores = importar_ventas(entrada)  # FicheroNoValido sube hasta main()
     carpeta = Path(carpeta_salida)
     carpeta.mkdir(parents=True, exist_ok=True)
     exportar_resumen(carpeta / "resumen.csv", ventas)
     escribir_errores(carpeta / "errores.txt", errores)
+    escribir_informe(carpeta / "informe.txt", ventas)
     logger.info("Importación terminada: %d válidas y %d descartadas", len(ventas), len(errores))
     return {
         "leidas": len(ventas) + len(errores),
@@ -176,24 +245,50 @@ def main(argumentos: list[str] | None = None) -> int:
     """Punto de entrada. Se entrega hecho: es el único sitio donde se capturan
     los errores del importador y donde se configura el logging.
 
-    Uso: python m6_practica_importador.py [entrada.csv] [carpeta_salida]
+    Uso: python m6_practica_importador.py [entrada.csv] [carpeta_salida] [--log fichero]
+
+    Ampliación 3: con ``--log fichero`` los mensajes del registro se envían a
+    ese fichero en lugar de a la pantalla, con la fecha y la hora delante.
     """
-    import sys
+    import argparse
 
-    argumentos = sys.argv[1:] if argumentos is None else argumentos
     datos = Path(__file__).parent.parent / "datos"
-    entrada = argumentos[0] if argumentos else datos / "ventas_con_errores.csv"
-    salida = argumentos[1] if len(argumentos) > 1 else Path("salida_practica_6")
+    analizador = argparse.ArgumentParser(description="Importador de ventas en CSV.")
+    analizador.add_argument("entrada", nargs="?", default=datos / "ventas_con_errores.csv")
+    analizador.add_argument("salida", nargs="?", default=Path("salida_practica_6"))
+    analizador.add_argument("--log", metavar="fichero", help="envía el registro a este fichero")
+    opciones = analizador.parse_args(argumentos)
 
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    manejador = _manejador_de_registro(opciones.log)
+    raiz = logging.getLogger()
+    nivel_anterior = raiz.level
+    raiz.addHandler(manejador)
+    raiz.setLevel(logging.INFO)
     try:
-        cantidades = procesar(entrada, salida)
+        cantidades = procesar(opciones.entrada, opciones.salida)
     except ErrorDeImportacion as error:
         logger.error("No se ha podido importar: %s", error)
         return 1
+    finally:
+        # Se deja el logging como estaba, y el fichero de registro cerrado
+        raiz.removeHandler(manejador)
+        raiz.setLevel(nivel_anterior)
+        manejador.close()
     print(f"Leídas {cantidades['leidas']} filas: {cantidades['validas']} válidas "
-          f"y {cantidades['descartadas']} descartadas. Resultados en {salida}")
+          f"y {cantidades['descartadas']} descartadas. Resultados en {opciones.salida}")
     return 0
+
+
+def _manejador_de_registro(ruta_log: str | None) -> logging.Handler:
+    """Devuelve un manejador hacia el fichero ``ruta_log`` o, sin él, hacia la pantalla."""
+    if ruta_log is None:
+        manejador = logging.StreamHandler()
+        manejador.setFormatter(logging.Formatter("%(levelname)s %(message)s"))
+    else:
+        Path(ruta_log).parent.mkdir(parents=True, exist_ok=True)
+        manejador = logging.FileHandler(ruta_log, encoding="utf-8")
+        manejador.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+    return manejador
 
 
 if __name__ == "__main__":

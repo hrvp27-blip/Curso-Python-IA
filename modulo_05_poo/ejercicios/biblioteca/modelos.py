@@ -16,6 +16,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 
+from .excepciones import ErrorDeBiblioteca, MaterialNoDisponible
+
 
 class Material(ABC):
     """Clase base abstracta de todo lo que se puede prestar."""
@@ -43,19 +45,19 @@ class Material(ABC):
     def prestar(self) -> None:
         """Marca el material como no disponible.
 
-        Lanza ``ValueError`` si ya estaba prestado.
+        Lanza ``MaterialNoDisponible`` si ya estaba prestado.
         """
         if not self._disponible:
-            raise ValueError(f"{self.codigo} ya está prestado")
+            raise MaterialNoDisponible(self.codigo)
         self._disponible = False
 
     def devolver(self) -> None:
         """Marca el material como disponible.
 
-        Lanza ``ValueError`` si no estaba prestado.
+        Lanza ``ErrorDeBiblioteca`` si no estaba prestado.
         """
         if self._disponible:
-            raise ValueError(f"{self.codigo} no está prestado")
+            raise ErrorDeBiblioteca(f"{self.codigo} no está prestado")
         self._disponible = True
 
     def __str__(self) -> str:

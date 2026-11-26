@@ -24,6 +24,8 @@ los tests sigan importando ``m5_practica_biblioteca`` como antes.
 #    biblioteca/modelos.py     Material, Libro, Revista, Dvd, Audiolibro,
 #                              Socio y Prestamo
 #    biblioteca/servicios.py   Biblioteca (préstamos, multas y reservas)
+#    biblioteca/excepciones.py ErrorDeBiblioteca y sus subclases
+#                              (Módulo 6, ampliación 3)
 #    biblioteca/__init__.py    reexporta todas las clases
 #
 #  Aquí solo se importan para que los tests sigan funcionando con
@@ -34,20 +36,30 @@ from biblioteca import (
     Audiolibro,
     Biblioteca,
     Dvd,
+    ErrorDeBiblioteca,
     Libro,
+    LimiteDePrestamos,
     Material,
+    MaterialNoDisponible,
+    MaterialNoEncontrado,
     Prestamo,
     Revista,
     Socio,
+    SocioNoEncontrado,
 )
 
 __all__ = [
     "Audiolibro",
     "Biblioteca",
     "Dvd",
+    "ErrorDeBiblioteca",
     "Libro",
+    "LimiteDePrestamos",
     "Material",
+    "MaterialNoDisponible",
+    "MaterialNoEncontrado",
     "Prestamo",
     "Revista",
     "Socio",
+    "SocioNoEncontrado",
 ]

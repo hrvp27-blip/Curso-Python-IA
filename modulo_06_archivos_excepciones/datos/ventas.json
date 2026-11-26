@@ -1,0 +1,182 @@
+[
+  {
+    "fecha": "2026-10-01",
+    "vendedor": "Ada",
+    "region": "Norte",
+    "producto": "Portátil",
+    "categoria": "Equipos",
+    "unidades": 2,
+    "precio": 950.0
+  },
+  {
+    "fecha": "2026-10-01",
+    "vendedor": "Linus",
+    "region": "Sur",
+    "producto": "Ratón",
+    "categoria": "Periféricos",
+    "unidades": 10,
+    "precio": 19.9
+  },
+  {
+    "fecha": "2026-10-02",
+    "vendedor": "Grace",
+    "region": "Centro",
+    "producto": "Monitor",
+    "categoria": "Periféricos",
+    "unidades": 3,
+    "precio": 189.0
+  },
+  {
+    "fecha": "2026-10-03",
+    "vendedor": "Ada",
+    "region": "Norte",
+    "producto": "Teclado",
+    "categoria": "Periféricos",
+    "unidades": 5,
+    "precio": 45.0
+  },
+  {
+    "fecha": "2026-10-05",
+    "vendedor": "Alan",
+    "region": "Sur",
+    "producto": "Licencia ofimática",
+    "categoria": "Software",
+    "unidades": 20,
+    "precio": 69.0
+  },
+  {
+    "fecha": "2026-10-06",
+    "vendedor": "Grace",
+    "region": "Centro",
+    "producto": "Portátil",
+    "categoria": "Equipos",
+    "unidades": 1,
+    "precio": 950.0
+  },
+  {
+    "fecha": "2026-10-08",
+    "vendedor": "Linus",
+    "region": "Sur",
+    "producto": "Monitor",
+    "categoria": "Periféricos",
+    "unidades": 2,
+    "precio": 189.0
+  },
+  {
+    "fecha": "2026-10-09",
+    "vendedor": "Ada",
+    "region": "Norte",
+    "producto": "Servidor",
+    "categoria": "Equipos",
+    "unidades": 1,
+    "precio": 3200.0
+  },
+  {
+    "fecha": "2026-10-12",
+    "vendedor": "Alan",
+    "region": "Sur",
+    "producto": "Teclado",
+    "categoria": "Periféricos",
+    "unidades": 8,
+    "precio": 45.0
+  },
+  {
+    "fecha": "2026-10-13",
+    "vendedor": "Grace",
+    "region": "Centro",
+    "producto": "Antivirus",
+    "categoria": "Software",
+    "unidades": 15,
+    "precio": 29.5
+  },
+  {
+    "fecha": "2026-10-15",
+    "vendedor": "Linus",
+    "region": "Norte",
+    "producto": "Portátil",
+    "categoria": "Equipos",
+    "unidades": 3,
+    "precio": 950.0
+  },
+  {
+    "fecha": "2026-10-16",
+    "vendedor": "Ada",
+    "region": "Norte",
+    "producto": "Ratón",
+    "categoria": "Periféricos",
+    "unidades": 12,
+    "precio": 19.9
+  },
+  {
+    "fecha": "2026-10-19",
+    "vendedor": "Alan",
+    "region": "Sur",
+    "producto": "Antivirus",
+    "categoria": "Software",
+    "unidades": 30,
+    "precio": 29.5
+  },
+  {
+    "fecha": "2026-10-20",
+    "vendedor": "Grace",
+    "region": "Centro",
+    "producto": "Teclado",
+    "categoria": "Periféricos",
+    "unidades": 4,
+    "precio": 45.0
+  },
+  {
+    "fecha": "2026-10-22",
+    "vendedor": "Linus",
+    "region": "Sur",
+    "producto": "Licencia ofimática",
+    "categoria": "Software",
+    "unidades": 10,
+    "precio": 69.0
+  },
+  {
+    "fecha": "2026-10-23",
+    "vendedor": "Ada",
+    "region": "Centro",
+    "producto": "Monitor",
+    "categoria": "Periféricos",
+    "unidades": 6,
+    "precio": 189.0
+  },
+  {
+    "fecha": "2026-10-26",
+    "vendedor": "Alan",
+    "region": "Sur",
+    "producto": "Portátil",
+    "categoria": "Equipos",
+    "unidades": 2,
+    "precio": 950.0
+  },
+  {
+    "fecha": "2026-10-27",
+    "vendedor": "Grace",
+    "region": "Norte",
+    "producto": "Servidor",
+    "categoria": "Equipos",
+    "unidades": 1,
+    "precio": 3200.0
+  },
+  {
+    "fecha": "2026-10-29",
+    "vendedor": "Linus",
+    "region": "Sur",
+    "producto": "Teclado",
+    "categoria": "Periféricos",
+    "unidades": 6,
+    "precio": 45.0
+  },
+  {
+    "fecha": "2026-10-30",
+    "vendedor": "Ada",
+    "region": "Norte",
+    "producto": "Antivirus",
+    "categoria": "Software",
+    "unidades": 25,
+    "precio": 29.5
+  }
+]
