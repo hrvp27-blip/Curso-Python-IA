@@ -1,0 +1,40 @@
+# Tema oscuro "centro de control" para el dashboard geoespacial
+
+[theme]
+base = "dark"
+primaryColor = "#22D3EE"
+backgroundColor = "#060A14"
+secondaryBackgroundColor = "#111A2E"
+codeBackgroundColor = "#0D1526"
+textColor = "#E2E8F0"
+linkColor = "#22D3EE"
+borderColor = "#1C2742"
+showWidgetBorder = true
+showSidebarBorder = true
+baseRadius = "12px"
+buttonRadius = "10px"
+font = "'Inter':https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+headingFont = "'Space Grotesk':https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap"
+codeFont = "'JetBrains Mono':https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
+baseFontSize = 14
+headingFontWeights = [700, 600, 600, 600, 500, 500]
+greenColor = "#34D399"
+redColor = "#F87171"
+yellowColor = "#FBBF24"
+orangeColor = "#FB923C"
+blueColor = "#38BDF8"
+violetColor = "#A78BFA"
+grayColor = "#94A3B8"
+chartCategoricalColors = ["#22D3EE", "#A78BFA", "#34D399", "#F87171", "#FBBF24", "#38BDF8", "#FB923C", "#94A3B8"]
+chartSequentialColors = ["#10B981", "#84CC16", "#FACC15", "#F59E0B", "#F97316", "#EF4444", "#DC2626", "#B91C1C", "#A855F7", "#7E22CE"]
+dataframeBorderColor = "#1E2A44"
+dataframeHeaderBackgroundColor = "#131C31"
+
+[theme.sidebar]
+backgroundColor = "#080E1C"
+secondaryBackgroundColor = "#131C31"
+borderColor = "#1E2A44"
+
+[client]
+# Sin el botón "Deploy" ni opciones de desarrollador en la barra superior
+toolbarMode = "minimal"

@@ -1,0 +1,61 @@
+codigo,nombre,provincia,lat,lon,altitud
+ALB01,Albacete - Centro,Albacete,38.9943,-1.8585,686.0
+ALG01,Algeciras - Puerto,Cádiz,36.1408,-5.4562,20.0
+ALI01,Alicante - Centro,Alicante,38.3452,-0.481,12.0
+ALM01,Almería - Centro,Almería,36.8381,-2.4597,16.0
+AVI01,Ávila - Centro,Ávila,40.6565,-4.6818,1131.0
+BAD01,Badajoz - Centro,Badajoz,38.8794,-6.9707,186.0
+BCN01,Barcelona - Eixample,Barcelona,41.3853,2.1538,26.0
+BIL01,Bilbao - Mazarredo,Bizkaia,43.2669,-2.9371,19.0
+BUR01,Burgos - Centro,Burgos,42.3439,-3.6969,856.0
+CAC01,Cáceres - Centro,Cáceres,39.4753,-6.3724,459.0
+CAD01,San Fernando - Bahía de Cádiz,Cádiz,36.4651,-6.1979,28.0
+CAR01,Cartagena - Centro,Murcia,37.6257,-0.9966,10.0
+CAS01,Castelló de la Plana - Centro,Castellón,39.9864,-0.0513,30.0
+CBA01,Córdoba - Centro,Córdoba,37.8882,-4.7794,106.0
+COR01,A Coruña - Riazor,A Coruña,43.3681,-8.4135,15.0
+CRE01,Ciudad Real - Centro,Ciudad Real,38.9848,-3.9274,628.0
+CUE01,Cuenca - Centro,Cuenca,40.0704,-2.1374,946.0
+ELX01,Elche - Centro,Alicante,38.2669,-0.6983,86.0
+GIJ01,Gijón - Centro,Asturias,43.5322,-5.6611,20.0
+GIR01,Girona - Centro,Girona,41.9794,2.8214,75.0
+GRA01,Granada - Centro,Granada,37.1773,-3.5986,680.0
+GUA01,Guadalajara - Centro,Guadalajara,40.6326,-3.1602,685.0
+HSC01,Huesca - Centro,Huesca,42.1401,-0.4089,488.0
+HUE01,Huelva - Centro,Huelva,37.2614,-6.9447,24.0
+IBZ01,Eivissa - Centro,Illes Balears,38.9067,1.4206,10.0
+JAE01,Jaén - Centro,Jaén,37.7796,-3.7849,573.0
+JER01,Jerez de la Frontera - Centro,Cádiz,36.6866,-6.1361,56.0
+LEO01,León - Centro,León,42.5987,-5.5671,838.0
+LLE01,Lleida - Centro,Lleida,41.6176,0.6200,155.0
+LOG01,Logroño - Centro,La Rioja,42.4627,-2.445,384.0
+LPA01,Las Palmas de Gran Canaria - Centro,Las Palmas,28.1235,-15.4363,8.0
+LUG01,Lugo - Centro,Lugo,43.0097,-7.5560,465.0
+LZT01,San Bartolomé - Lanzarote,Las Palmas,29.0017,-13.6130,240.0
+MAD01,Madrid - Escuelas Aguirre,Madrid,40.4215,-3.6823,672.0
+MAD02,Madrid - Casa de Campo,Madrid,40.4194,-3.7473,645.0
+MAH01,Maó - Centro,Illes Balears,39.8885,4.2658,30.0
+MAL01,Málaga - Centro,Málaga,36.7213,-4.4214,11.0
+MUR01,Murcia - Centro,Murcia,37.9922,-1.1307,43.0
+OUR01,Ourense - Centro,Ourense,42.3358,-7.8639,139.0
+OVI01,Oviedo - Palacio de Deportes,Asturias,43.3656,-5.8606,232.0
+PAL01,Palencia - Centro,Palencia,42.0097,-4.5288,749.0
+PAM01,Pamplona - Centro,Navarra,42.8125,-1.6458,449.0
+PMI01,Palma - Centro,Illes Balears,39.5696,2.6502,13.0
+PON01,Pontevedra - Centro,Pontevedra,42.4310,-8.6444,20.0
+SAL01,Salamanca - Centro,Salamanca,40.9651,-5.664,802.0
+SAN01,Santander - Centro,Cantabria,43.4623,-3.8099,15.0
+SEG01,Segovia - Centro,Segovia,40.9429,-4.1088,1002.0
+SEV01,Sevilla - Torneo,Sevilla,37.4044,-5.9989,8.0
+SOR01,Soria - Centro,Soria,41.7666,-2.4790,1063.0
+SSE01,Donostia-San Sebastián - Centro,Gipuzkoa,43.3183,-1.9812,10.0
+TAR01,Tarragona - Centro,Tarragona,41.1189,1.2445,68.0
+TER01,Teruel - Centro,Teruel,40.3456,-1.1065,915.0
+TFN01,Santa Cruz de Tenerife - Centro,Santa Cruz de Tenerife,28.4636,-16.2518,30.0
+TOL01,Toledo - Centro,Toledo,39.8628,-4.0273,529.0
+VAL01,València - Pista de Silla,Valencia,39.4581,-0.3767,11.0
+VIG01,Vigo - Centro,Pontevedra,42.2406,-8.7207,30.0
+VIT01,Vitoria-Gasteiz - Centro,Araba/Álava,42.8467,-2.6716,525.0
+VLL01,Valladolid - Arco de Ladrillo,Valladolid,41.6413,-4.7302,698.0
+ZAM01,Zamora - Centro,Zamora,41.5034,-5.7446,649.0
+ZAR01,Zaragoza - Centro,Zaragoza,41.6488,-0.8891,208.0

@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Mapa de la reproducción: el navegador interpola entre horas fotograma a fotograma.
+     Python solo rellena __DATOS__ con todas las horas del periodo. -->
+<!-- Mapa base: el mismo estilo oscuro de CARTO que usa pydeck con map_style="dark" -->
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<script src="https://unpkg.com/deck.gl@9.1.14/dist.min.js"></script>
+<style>
+  html, body { margin: 0; height: 100%; background: #060A14; overflow: hidden;
+    font-family: Inter, "Segoe UI", sans-serif; }
+  #mapa { position: absolute; inset: 0; }
+  .maplibregl-ctrl-attrib { background: rgba(6, 10, 20, .6) !important; }
+  .maplibregl-ctrl-attrib a { color: #64748B !important; }
+</style>
+</head>
+<body>
+<div id="mapa"></div>
+<script>
+const D = __DATOS__;
+const S = D.estaciones.length, C = D.celdas.length, N = D.valores.length;
+
+// --- Pesos IDW (1 / distancia²), calculados una sola vez -------------------------
+function haversine(lat1, lon1, lat2, lon2) {
+  const r = Math.PI / 180, dlat = (lat2 - lat1) * r, dlon = (lon2 - lon1) * r;
+  const a = Math.sin(dlat / 2) ** 2 + Math.cos(lat1 * r) * Math.cos(lat2 * r) * Math.sin(dlon / 2) ** 2;
+  return 2 * 6371 * Math.asin(Math.sqrt(a));
+}
+const W = new Float32Array(C * S);
+D.celdas.forEach(([lon, lat], c) => D.estaciones.forEach((e, s) => {
+  W[c * S + s] = 1 / Math.max(haversine(lat, lon, e.lat, e.lon), 0.001) ** D.potencia;
+}));
+
+// --- Escala oficial: mismas reglas que estaciones/escalas.py ----------------------
+const E = D.escala;
+function indiceClase(v) {             // cada corte pertenece a la clase de abajo
+  let i = 0;
+  while (i < E.cortes.length && v > E.cortes[i]) i++;
+  return i;
+}
+function limitesClase(i) {
+  const k = E.cortes;
+  const inf = i > 0 ? k[i - 1] : Math.min(E.rango[0], k[0] - 1);
+  const sup = i < k.length ? k[i] : Math.max(E.rango[1], k[k.length - 1] + 1);
+  return [inf, sup];
+}
+function rgbMatizado(v) {             // más oscuro abajo de la clase, pleno arriba
+  const i = indiceClase(v), [inf, sup] = limitesClase(i);
+  const pos = Math.min(1, Math.max(0, (v - inf) / (sup - inf)));
+  const t = 0.45 + 0.55 * pos;
+  return E.colores[i].map((c, j) => Math.round(E.fondo[j] + (c - E.fondo[j]) * t));
+}
+function altura(v) {
+  const p = Math.min(1, Math.max(0, (v - E.rango[0]) / (E.rango[1] - E.rango[0])));
+  return (D.altura.minima + p * D.altura.maxima) * D.altura.exageracion;
+}
+
+// --- Estado de cada fotograma -----------------------------------------------------
+const valor = new Float32Array(S), valido = new Uint8Array(S), superficie = new Float32Array(C);
+function calcular(t) {
+  const h = Math.floor(t), f = t - h;
+  const a = ((h % N) + N) % N, b = (a + 1) % N;
+  for (let s = 0; s < S; s++) {
+    const va = D.valores[a][s], vb = D.valores[b][s];
+    valido[s] = (va !== null || vb !== null) ? 1 : 0;
+    valor[s] = va === null ? vb : vb === null ? va : va + (vb - va) * f;
+  }
+  for (let c = 0; c < C; c++) {
+    let num = 0, den = 0;
+    for (let s = 0; s < S; s++) if (valido[s]) { const w = W[c * S + s]; num += w * valor[s]; den += w; }
+    superficie[c] = den ? num / den : NaN;
+  }
+}
+
+const m = D.mitad;
+const celdas = D.celdas.map(([lon, lat], i) => ({
+  i, poligono: [[lon - m, lat - m], [lon + m, lat - m], [lon + m, lat + m], [lon - m, lat + m]]}));
+const estaciones = D.estaciones.map((e, i) => ({...e, i}));
+
+// Meridianos y paralelos cada grado, más marcados cada cinco (igual que panel/capas.py)
+const graticula = [];
+for (let lon = -20; lon <= 6; lon++) graticula.push({camino: [[lon, 26], [lon, 45]], fuerte: lon % 5 === 0});
+for (let lat = 26; lat <= 45; lat++) graticula.push({camino: [[-20, lat], [6, lat]], fuerte: lat % 5 === 0});
+const capaGraticula = new deck.PathLayer({id: "graticula", data: graticula, getPath: d => d.camino,
+  getColor: d => d.fuerte ? [34, 211, 238, 55] : [148, 163, 184, 22], widthMinPixels: 1});
+
+const contorno = [
+  new deck.PathLayer({id: "contorno_halo", data: D.contorno, getPath: d => d,
+    getColor: [34, 211, 238, 18], widthMinPixels: 18}),
+  new deck.PathLayer({id: "contorno_brillo", data: D.contorno, getPath: d => d,
+    getColor: [34, 211, 238, 60], widthMinPixels: 6}),
+  new deck.PathLayer({id: "contorno", data: D.contorno, getPath: d => d,
+    getColor: [34, 211, 238, 235], widthMinPixels: 1.5}),
+];
+
+function capas(fotograma) {
+  return [
+    capaGraticula,
+    new deck.SolidPolygonLayer({
+      id: "superficie", data: celdas, getPolygon: d => d.poligono, pickable: true,
+      getFillColor: d => isNaN(superficie[d.i]) ? [0, 0, 0, 0] : [...rgbMatizado(superficie[d.i]), D.opacidad],
+      updateTriggers: {getFillColor: fotograma}}),
+    ...contorno,
+    new deck.ScatterplotLayer({
+      id: "halos", data: estaciones, getPosition: d => [d.lon, d.lat], getRadius: D.halo,
+      stroked: true, filled: true, lineWidthMinPixels: 1.2,
+      getFillColor: d => valido[d.i] ? [...E.colores[indiceClase(valor[d.i])], 45] : [0, 0, 0, 0],
+      getLineColor: d => valido[d.i] ? [...E.colores[indiceClase(valor[d.i])], 170] : [0, 0, 0, 0],
+      updateTriggers: {getFillColor: fotograma, getLineColor: fotograma}}),
+    new deck.ColumnLayer({
+      id: "columnas", data: estaciones, getPosition: d => [d.lon, d.lat], radius: D.radio,
+      diskResolution: 24, extruded: true, pickable: true, autoHighlight: true,
+      highlightColor: [255, 255, 255, 90],
+      material: {ambient: 0.6, diffuse: 0.55, shininess: 48, specularColor: [120, 200, 255]},
+      getElevation: d => valido[d.i] ? altura(valor[d.i]) : 0,
+      getFillColor: d => valido[d.i] ? [...E.colores[indiceClase(valor[d.i])], 255] : [0, 0, 0, 0],
+      updateTriggers: {getElevation: fotograma, getFillColor: fotograma}}),
+    new deck.TextLayer({
+      id: "valores", data: estaciones,
+      getPosition: d => [d.lon, d.lat, valido[d.i] ? altura(valor[d.i]) : 0],
+      getText: d => valido[d.i] ? valor[d.i].toFixed(0) : "",
+      getSize: 13, getColor: [248, 250, 252], getPixelOffset: [0, -12], billboard: true,
+      fontFamily: "Inter, sans-serif", fontWeight: 700, outlineWidth: 5,
+      outlineColor: [6, 10, 20], fontSettings: {sdf: true},
+      updateTriggers: {getPosition: fotograma, getText: fotograma}}),
+  ];
+}
+
+function ayuda({object, layer}) {
+  if (!object) return null;
+  const estilo = {backgroundColor: "rgba(6,10,20,0.92)", color: "#E2E8F0",
+                  border: "1px solid rgba(34,211,238,0.45)", borderRadius: "12px",
+                  padding: "10px 12px", fontFamily: "Inter, sans-serif",
+                  boxShadow: "0 14px 34px -10px rgba(0,0,0,.85), 0 0 24px -8px rgba(34,211,238,.6)"};
+  const rotulo = t => `<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.16em;` +
+                      `color:#67E8F9;text-transform:uppercase">${t}</div>`;
+  const nombre = t => `<div style="font:600 14px 'Space Grotesk',Inter,sans-serif;margin:2px 0 6px">${t}</div>`;
+  const cifra = t => `<div style="font:600 13px 'JetBrains Mono',monospace">${t}</div>`;
+  if (layer.id === "superficie") {
+    const v = superficie[object.i];
+    return {html: rotulo("Interpolación IDW") + cifra(`${v.toFixed(1)} ${E.unidad}`), style: estilo};
+  }
+  if (!valido[object.i]) return {html: rotulo(object.provincia) + nombre(object.nombre) + cifra("Sin dato"), style: estilo};
+  return {html: rotulo(object.provincia) + nombre(object.nombre) +
+                cifra(`${valor[object.i].toFixed(1)} ${E.unidad}`), style: estilo};
+}
+
+// El reloj es el mismo que usa Python: hora = desde + segundos desde t0 / paso
+function horaActual() { return D.desde + (Date.now() / 1000 - D.t0) / D.paso; }
+
+calcular(horaActual());
+const v = D.vista;
+const mapaBase = new maplibregl.Map({
+  container: "mapa", style: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
+  center: [v.longitude, v.latitude], zoom: v.zoom, pitch: v.pitch, bearing: v.bearing,
+  maxPitch: 85});
+const superpuesto = new deck.MapboxOverlay({layers: capas(0), getTooltip: ayuda});
+mapaBase.addControl(superpuesto);
+
+let fotograma = 0;
+function animar() {
+  fotograma++;
+  calcular(horaActual());
+  superpuesto.setProps({layers: capas(fotograma)});
+  requestAnimationFrame(animar);
+}
+requestAnimationFrame(animar);
+</script>
+</body>
+</html>
