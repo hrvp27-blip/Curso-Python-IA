@@ -16,12 +16,13 @@ def cargar_en_bruto(ruta: str | Path) -> pd.DataFrame:
 
     Las celdas vacías quedan como valores ausentes.
     """
-    raise NotImplementedError
+    return pd.read_csv(ruta, encoding="utf-8", dtype=str)
 
 
 def contar_ausentes(df: pd.DataFrame) -> dict[str, int]:
     """Devuelve cuántos valores ausentes tiene cada columna. Solo las que tienen alguno."""
-    raise NotImplementedError
+    ausentes = df.isna().sum()
+    return {columna: int(n) for columna, n in ausentes[ausentes > 0].items()}
 
 
 def normalizar_texto(df: pd.DataFrame, columnas: list[str] = COLUMNAS_TEXTO) -> pd.DataFrame:
@@ -29,7 +30,10 @@ def normalizar_texto(df: pd.DataFrame, columnas: list[str] = COLUMNAS_TEXTO) -> 
 
     "  ada " y "ADA" pasan a ser "Ada". Los valores ausentes siguen ausentes.
     """
-    raise NotImplementedError
+    copia = df.copy()
+    for columna in columnas:  # recorre columnas, no filas: cada una se trata entera
+        copia[columna] = copia[columna].str.strip().str.capitalize()
+    return copia
 
 
 def convertir_tipos(df: pd.DataFrame) -> pd.DataFrame:
@@ -39,17 +43,21 @@ def convertir_tipos(df: pd.DataFrame) -> pd.DataFrame:
     - ``unidades``: número. Lo que no es un número queda ausente.
     - ``precio``: número. Admite coma decimal: "29,5" es 29.5.
     """
-    raise NotImplementedError
+    return df.assign(
+        fecha=pd.to_datetime(df["fecha"], format="%Y-%m-%d", errors="coerce"),
+        unidades=pd.to_numeric(df["unidades"], errors="coerce"),
+        precio=pd.to_numeric(df["precio"].str.replace(",", ".", regex=False), errors="coerce"),
+    )
 
 
 def quitar_duplicados(df: pd.DataFrame) -> pd.DataFrame:
     """Devuelve el DataFrame sin filas repetidas. Se conserva la primera de cada grupo."""
-    raise NotImplementedError
+    return df.drop_duplicates(keep="first")
 
 
 def rellenar_region(df: pd.DataFrame, valor: str = "Sin región") -> pd.DataFrame:
     """Devuelve una copia en la que las regiones ausentes se sustituyen por ``valor``."""
-    raise NotImplementedError
+    return df.assign(region=df["region"].fillna(valor))
 
 
 def limpiar(df: pd.DataFrame) -> pd.DataFrame:
@@ -65,4 +73,10 @@ def limpiar(df: pd.DataFrame) -> pd.DataFrame:
        y las que tienen unidades o precio menores o iguales que cero.
     6. Dejar ``unidades`` como entero y renumerar el índice desde 0.
     """
-    raise NotImplementedError
+    df = normalizar_texto(df)
+    df = quitar_duplicados(df)
+    df = convertir_tipos(df)
+    df = rellenar_region(df)
+    df = df.dropna(subset=["fecha", "vendedor", "unidades", "precio"])
+    df = df[(df["unidades"] > 0) & (df["precio"] > 0)]
+    return df.astype({"unidades": int}).reset_index(drop=True)
